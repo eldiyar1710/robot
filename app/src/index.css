@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-code: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-display: "Fraunces", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+
+  --bg: 222 28% 5%;
+  --panel: 222 22% 8%;
+  --panel-2: 222 20% 11%;
+  --text: 210 40% 98%;
+  --muted: 215 16% 70%;
+  --accent: 163 92% 48%;
+  --danger: 355 85% 58%;
+
+  font-family: var(--font-body);
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+  height: 100%;
+  color: hsl(var(--text));
+  background:
+    radial-gradient(1200px 600px at 12% -10%, rgba(16, 185, 129, 0.16), transparent 55%),
+    radial-gradient(900px 500px at 110% 0%, rgba(56, 189, 248, 0.14), transparent 50%),
+    radial-gradient(800px 500px at 50% 120%, rgba(99, 102, 241, 0.12), transparent 45%),
+    hsl(var(--bg));
+}
+
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 20%, transparent 78%);
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-code);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+@layer components {
+  .field {
+    @apply h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition;
+    @apply placeholder:text-white/30 focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/15;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-2xl px-4 text-sm font-semibold text-black;
+    @apply bg-gradient-to-r from-emerald-400 to-cyan-400 hover:opacity-90 disabled:opacity-40;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-sm hover:bg-white/[0.07];
+  }
+  .glass {
+    @apply rounded-3xl border border-white/10 bg-[hsl(var(--panel))]/75 shadow-[0_20px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl;
+  }
+}
