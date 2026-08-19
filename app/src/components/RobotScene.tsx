@@ -7,7 +7,7 @@ import type { URDFRobot } from "urdf-loader";
 import { JOINT_NAMES, type JointName, type JointTargets } from "@/motion/joints";
 import { DEFAULT_JOINTS, useRobotStore } from "@/store/useRobotStore";
 
-const URDF_URL = "/models/g1/g1_23dof_rev_1_0.urdf";
+const URDF_URL = `${import.meta.env.BASE_URL}models/g1/g1_23dof_rev_1_0.urdf`;
 
 const ROBOT_PALETTE = {
   metalLight: "#e8eaec",
@@ -55,68 +55,65 @@ function getMaterialForMesh(name: string): Partial<THREE.MeshStandardMaterialPar
   return { color: ROBOT_PALETTE.metalLight, metalness: 0.85, roughness: 0.35, envMapIntensity: 1.05 };
 }
 
+function styleUrdfMeshes(result: URDFRobot) {
+  result.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.frustumCulled = false;
+
+    try {
+      const geom = mesh.geometry as THREE.BufferGeometry;
+      if (!geom.attributes.normal) geom.computeVertexNormals();
+      geom.computeBoundingBox();
+      geom.computeBoundingSphere();
+    } catch {
+      // ignore
+    }
+
+    if (mesh.material) {
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      const newMats: THREE.MeshStandardMaterial[] = [];
+      for (const _m of mats) {
+        const params = getMaterialForMesh(mesh.name || "");
+        const newMat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(params.color ?? "#d1d5db"),
+          metalness: params.metalness ?? 0.6,
+          roughness: params.roughness ?? 0.4,
+          envMapIntensity: params.envMapIntensity ?? 1.0,
+        });
+        try {
+          newMat.color.convertSRGBToLinear();
+        } catch {
+          /* no-op */
+        }
+        newMats.push(newMat);
+      }
+      mesh.material = Array.isArray(mesh.material) ? newMats : newMats[0];
+    }
+  });
+}
+
 function useUrdfRobot(url: string) {
   const [robot, setRobot] = useState<URDFRobot | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const loader = new URDFLoader();
-    try {
-      const base = url.replace(/[^/]+$/, "");
-      const meshPath = base + "meshes/";
-      if (typeof loader.setMeshPath === "function") loader.setMeshPath(meshPath);
-    } catch (e) {
-      // ignore
-    }
-    if (loader.manager && typeof loader.manager.onError === "function") {
-      const orig = loader.manager.onError.bind(loader.manager);
-      loader.manager.onError = (itemUrl) => {
-        console.error("URDF asset failed to load:", itemUrl);
-        orig(itemUrl);
-      };
-    }
+    const manager = new THREE.LoadingManager();
+    manager.onError = (itemUrl) => {
+      console.error("URDF asset failed to load:", itemUrl);
+    };
+
+    const loader = new URDFLoader(manager);
+    // URDF mesh paths are already "meshes/*.STL" — keep the URDF directory as the root.
+    loader.workingPath = url.slice(0, url.lastIndexOf("/") + 1);
     loader.load(
       url,
       (result) => {
         if (cancelled) return;
-        result.traverse((obj) => {
-          const mesh = obj as THREE.Mesh;
-          if (!mesh.isMesh) return;
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.frustumCulled = false;
-
-          try {
-            const geom = mesh.geometry as THREE.BufferGeometry;
-            if (!geom.attributes.normal) geom.computeVertexNormals();
-            geom.computeBoundingBox();
-            geom.computeBoundingSphere();
-          } catch (e) {
-            // ignore
-          }
-
-          if (mesh.material) {
-            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-            const newMats: THREE.MeshStandardMaterial[] = [];
-            for (const _m of mats) {
-              const params = getMaterialForMesh(mesh.name || "");
-              const newMat = new THREE.MeshStandardMaterial({
-                color: new THREE.Color(params.color ?? "#d1d5db"),
-                metalness: params.metalness ?? 0.6,
-                roughness: params.roughness ?? 0.4,
-                envMapIntensity: params.envMapIntensity ?? 1.0,
-              });
-              try {
-                newMat.color.convertSRGBToLinear();
-              } catch (e) {
-                /* no-op */
-              }
-              newMats.push(newMat);
-            }
-            mesh.material = Array.isArray(mesh.material) ? newMats : newMats[0];
-          }
-        });
+        styleUrdfMeshes(result);
         setRobot(result);
       },
       undefined,
@@ -436,11 +433,10 @@ export const RobotScene = memo(function RobotScene() {
       <StudioLighting />
       <StudioStage />
 
-      <Suspense fallback={<RobotModelFallback />}>
+      <Suspense fallback={null}>
         <UrdfG1Model />
+        <Environment preset="studio" environmentIntensity={1.22} backgroundBlurriness={0} />
       </Suspense>
-
-      <Environment preset="studio" environmentIntensity={1.22} backgroundBlurriness={0} />
 
       <OrbitControls
         enablePan={false}
