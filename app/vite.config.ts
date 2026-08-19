@@ -4,7 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.VITE_BASE || "/",
+  base: process.env.GITHUB_ACTIONS === "true" ? "/robot/" : "/",
   build: {
     sourcemap: "hidden",
   },

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
+import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import Home from "@/pages/Home";
 import Learn from "@/pages/Learn";
 import Sandbox from "@/pages/Sandbox";
@@ -13,7 +13,7 @@ startAuthListener();
 
 export default function App() {
   return (
-    <Router>
+    <HashRouter>
       <AppShell>
         <Routes>
           <Route path="/auth" element={<Auth />} />
@@ -68,6 +68,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppShell>
-    </Router>
+    </HashRouter>
   );
 }
